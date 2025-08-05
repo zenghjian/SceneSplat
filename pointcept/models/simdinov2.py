@@ -90,7 +90,6 @@ class DefaultContrastiverSimDinoV2(nn.Module):
         mask_sample_probability=0.5,
         dino_weight=1.0,
         ibot_weight=1.0,
-        code_weight=1.0,
         mae_weight=1.0,
         mask_grid_size = 0.2, # 0.1 for indoor scene
         mask_type = 'patch', # 'splats' or 'patch'
@@ -107,7 +106,6 @@ class DefaultContrastiverSimDinoV2(nn.Module):
 
         self.dino_weight = dino_weight
         self.ibot_weight = ibot_weight
-        self.code_weight = code_weight
         self.mae_weight = mae_weight
         self.num_layers = len(backbone['enc_depths'])
         self.local_crop_num = local_crop_num

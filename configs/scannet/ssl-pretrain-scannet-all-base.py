@@ -27,7 +27,6 @@ model = dict(
     do_ibot=True, # if do ibot loss
     enable_mae_loss=True, # enable mae for training stability
     dino_weight=1.0,
-    code_weight=1.0,
     ibot_weight=1.0,
     mask_ratio_min_max=(0.1, 0.5), # mask ratio for masked token
     mask_sample_probability=0.5, # mask probability for masked global token
