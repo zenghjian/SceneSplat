@@ -5,8 +5,8 @@ _base_ = [
 # misc custom setting
 debug = 0
 gpu_nums = 1 if debug else 3
-batch_size = 6 * gpu_nums
-batch_size_val = 6 * gpu_nums
+batch_size = 8 * gpu_nums
+batch_size_val = 8 * gpu_nums
 batch_size_test = 1 * gpu_nums
 num_worker = 24 * gpu_nums if not debug else 0
 mix_prob = 0. # no mixup for ssl

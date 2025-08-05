@@ -179,7 +179,7 @@ python tools/train.py \
 
 
 ## Self-Supervised Pretraining
-Using language features for pretraining poses challenges, such as long precomputation time and the need for large storage space to save them. Intead, inspired by work [SimDINO](https://github.com/RobinWu218/SimDINO), we introduce self-supervised training with gaussians splats. 
+Using language features for pretraining poses challenges, such as long precomputation time and the need for large storage space to save them. Intead, inspired by work [SimDINO](https://github.com/RobinWu218/SimDINO), we introduce self-supervised training with gaussians splats. We are **retraining** the model using the newly released code on the expanded dataset and will share the updated weights as soon as possible.
 
 Our approach differs from [Sonata](https://github.com/facebookresearch/sonata/tree/main/sonata) in several key aspects:
 

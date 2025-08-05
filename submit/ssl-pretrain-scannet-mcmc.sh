@@ -12,12 +12,12 @@
 source ~/.bashrc
 conda activate gscept
 echo "Running on $(hostname)"
-cd /insait/qimaqi/workspace/SceneSplat_release/
+cd /insait/qimaqi/workspace/gaussianssl/SceneSplat
 export PYTHONPATH=./
 
 gpu_num=1
-batch_size=$((2*gpu_num))
-batch_size_val=$((2*gpu_num))
+batch_size=$((8*gpu_num))
+batch_size_val=$((8*gpu_num))
 batch_size_test=$((1*gpu_num))
 num_worker=$((8*gpu_num))
 
