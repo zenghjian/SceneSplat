@@ -179,7 +179,7 @@ python tools/train.py \
 
 
 ## Self-Supervised Pretraining
-Using language features for pretraining poses challenges, such as long precomputation time and the need for large storage space to save them. Intead, inspired by work [SimDINO](https://github.com/RobinWu218/SimDINO), we introduce self-supervised training with gaussians splats. We are **retraining** the model using the newly released code on the expanded dataset and will share the updated weights as soon as possible.
+Language features offer exciting opportunities for pretraining, though they can require long computation time on preprocessing. Building on the approach from [SimDINO](https://github.com/RobinWu218/SimDINO), we've developed an self-supervised pretraining method using parameters of gaussian splats only. The model checkpoint from self-supervised pretraining will be updated later as we are currently retraining our model on the expanded datasets.
 
 Our approach differs from [Sonata](https://github.com/facebookresearch/sonata/tree/main/sonata) in several key aspects:
 
@@ -188,8 +188,8 @@ Our approach differs from [Sonata](https://github.com/facebookresearch/sonata/tr
 3. Use of the **SimDINO loss**, which is more stable and memory-efficient
 
 
-### Datasets Prepare
-To train the model in a self-supervised manner, the dataset should follow the structure described above—reusing the preprocessed data is acceptable. To ensure compatibility with PTV3 and SONATA, an additional normal attribute can be included during self-supervised training.
+### Data Preparation
+To train the model in a self-supervised manner, the dataset should follow the structure described above—reusing the preprocessed data is acceptable. If compatibility is needed with PTv3 and Sonata, an additional normal attribute can be included during self-supervised training.
 
 ```bash
 .
@@ -201,7 +201,7 @@ To train the model in a self-supervised manner, the dataset should follow the st
 ├── normal.npy (optional)
 ```
 
-Please download more gaussians splats from our repo like hypersim, arkitssene, 3rscan etc for pretraining  [data repository](https://huggingface.co/datasets/GaussianWorld/scene_splat_7k). After downloading, update the data path for each one to the [config](configs/concat_dataset/ssl-pretrain-concat-scan-ppv2-matt-3rscan-arkit-hyper-mcmc-base.py).
+Please download more gaussians splats from our repo like hypersim, arkitssene, 3rscan etc for pretraining  [data repository](https://huggingface.co/datasets/GaussianWorld/scene_splat_7k). After downloading, update the data path for each one in the [config](configs/concat_dataset/ssl-pretrain-concat-scan-ppv2-matt-3rscan-arkit-hyper-mcmc-base.py).
 
 
 ### Pretraining Details
@@ -212,16 +212,16 @@ The model follows the standard **PTv3 architecture**, consisting of:
 * An **Encoder** that increases feature dimensions while reducing spatial resolution.
 * A **Decoder** that restores spatial resolution and reduces feature dimensions, using skip connections.
 
-We are also exploring ways to place more emphasis on the **Encoder**, similar to the approach used in [SONATA](https://github.com/facebookresearch/sonata/tree/main/sonata) with upcast attention.
+We are also exploring ways to place more emphasis on the **Encoder**, similar to the approach used in [Sonata](https://github.com/facebookresearch/sonata/tree/main/sonata) with upcast attention.
 
 The config differs from language pretraining in the following aspects:
 * **Trainer**: We use [`DefaultSSLPreTrainer`](pointcept/engines/pretrain.py) instead of [`LangPretrainer`](pointcept/models/default.py).
 * **Model**: We use [`PT-v3m1-simdino`](pointcept/models/point_transformer_v3_ssl/point_transformer_v3m1_ssl.py) instead of the standard [`PT-v3m1`](pointcept/models/point_transformer_v3/point_transformer_v3m1_base.py).
 * **Data**: We use the [`GenericGSDataset`](pointcept/datasets/generic_gs.py), which loads Gaussian attributes. We also implement global and local augmentations for different views.
-* **Hooks**: We skip the testing stage by setting `evaluate = False`.
+* **Hooks**: We skip the testing stage by setting `evaluate=False`.
 
 
-**Train from scratch.** Similar to the training described above, you can start pretraining by calling the [pretrain](tools/ssl_pretrain.py) interface function with the corresponding configs.
+**Train from scratch.** Similar to the vision-language pretraining, you can start pretraining by calling the [pretrain](tools/ssl_pretrain.py) interface function with the corresponding configs.
 
 Note that the config settings can be passed on-the-fly using the `--options` flag. The `save_path` is the directory where the model checkpoints, logs, and evaluation results will be saved. For example, the following command starts the run with the joint training config.
 ```bash
@@ -255,7 +255,7 @@ python tools/train.py \
 ```
 
 ## Working with Custom Data
-We cover using custom 3DGS scenes for vision-language feature inference and self-supervised pretraining.
+We cover using custom 3DGS scenes for vision-language feature inference.
 
 **Inference on custom 3DGS scenes.** Please use the example script `scripts/preprocess_gs.py` to preprocess the 3DGS scenes into `*.npy` files. The inference requires the per-scene folder under a root path.
 
