@@ -14,13 +14,13 @@ torchvision>=0.16.0
 torchaudio>=2.1.0
 --extra-index-url https://download.pytorch.org/whl/cu121
 
-# PyTorch Geometric (use cu121 for CUDA 12.8 compatibility)
---find-links https://data.pyg.org/whl/torch-2.5.0+cu121.html
-torch-scatter
-torch-sparse
-torch-cluster
-torch-spline-conv
-torch-geometric
+# # PyTorch Geometric (use cu121 for CUDA 12.8 compatibility)
+# --find-links https://data.pyg.org/whl/torch-2.5.0+cu121.html
+# torch-scatter
+# torch-sparse
+# torch-cluster
+# torch-spline-conv
+# torch-geometric
 
 # Machine Learning and NLP
 transformers>=4.30.0
