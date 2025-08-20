@@ -1,0 +1,48 @@
+# SceneSplat Requirements - Core Dependencies
+# Compatible with Python 3.12 and CUDA 12.8
+
+# Core scientific computing
+numpy>=1.24.0
+scipy>=1.10.0
+matplotlib>=3.8.0
+h5py
+pyyaml
+
+# Deep learning framework (CUDA 12.1 compatible with 12.8)
+torch>=2.1.0
+torchvision>=0.16.0
+torchaudio>=2.1.0
+--extra-index-url https://download.pytorch.org/whl/cu121
+
+# PyTorch Geometric (use cu121 for CUDA 12.8 compatibility)
+--find-links https://data.pyg.org/whl/torch-2.5.0+cu121.html
+torch-scatter
+torch-sparse
+torch-cluster
+torch-spline-conv
+torch-geometric
+
+# Machine Learning and NLP
+transformers>=4.30.0
+timm
+einops>=0.6.0
+
+# Visualization and utilities
+tensorboard
+tensorboardx
+wandb
+addict
+termcolor
+ftfy
+regex
+tqdm
+yapf
+black
+
+# 3D processing
+plyfile>=0.8.1
+open3d>=0.17.0
+
+# Development tools
+ninja
+packaging
