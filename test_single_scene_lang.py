@@ -124,8 +124,10 @@ def test_single_scene():
             output = model(input_dict)
             print(f"   ✅ 推理成功!")
             
-            # 保存推理结果
-            save_results(output, input_dict, scene_path)
+            # 保存推理结果 (简化版)
+            from save_inference_features_simple import save_inference_output_simple
+            scene_name = os.path.basename(scene_path)
+            saved_files = save_inference_output_simple(output, input_dict, scene_name)
             
             return True, output
             
@@ -147,24 +149,90 @@ def save_results(output, input_dict, scene_path):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     scene_name = os.path.basename(scene_path)
     
+    saved_files = {}
+    
     try:
-        # 1. 保存特征向量和坐标 (numpy格式)
-        if isinstance(output, dict) and 'point_feat' in output:
-            point_feat = output['point_feat']
-            if hasattr(point_feat, 'feat'):
-                feat_array = point_feat.feat.cpu().numpy()
-                feat_file = os.path.join(results_dir, f"{scene_name}_{timestamp}_features.npy")
-                np.save(feat_file, feat_array)
-                print(f"   ✅ 输出特征向量已保存到: {feat_file}")
-                print(f"       形状: {feat_array.shape}")
+        # 1. 保存所有输出数据
+        print("   正在分析输出结构...")
+        
+        if isinstance(output, dict):
+            print(f"   发现输出字典，键: {list(output.keys())}")
+            
+            # 保存完整输出字典 (pickle格式，保持原始结构)
+            output_file = os.path.join(results_dir, f"{scene_name}_{timestamp}_full_output.pkl")
+            with open(output_file, 'wb') as f:
+                # 将所有tensor移到CPU再保存
+                output_cpu = {}
+                for k, v in output.items():
+                    if isinstance(v, torch.Tensor):
+                        output_cpu[k] = v.detach().cpu()
+                    elif hasattr(v, 'feat') and hasattr(v, 'coord'):
+                        # Point对象
+                        point_cpu = type(v)()
+                        for attr_name in dir(v):
+                            if not attr_name.startswith('_') and hasattr(v, attr_name):
+                                attr_value = getattr(v, attr_name)
+                                if isinstance(attr_value, torch.Tensor):
+                                    setattr(point_cpu, attr_name, attr_value.detach().cpu())
+                                elif not callable(attr_value):
+                                    setattr(point_cpu, attr_name, attr_value)
+                        output_cpu[k] = point_cpu
+                    else:
+                        output_cpu[k] = v
+                pickle.dump(output_cpu, f)
+            
+            saved_files['full_output'] = output_file
+            print(f"   ✅ 完整输出已保存到: {output_file}")
+            
+            # 2. 提取并保存主要特征
+            for key, value in output.items():
+                print(f"   处理输出项: {key}")
                 
-                # 保存坐标信息
-                if hasattr(point_feat, 'coord'):
-                    coord_array = point_feat.coord.cpu().numpy()
-                    coord_file = os.path.join(results_dir, f"{scene_name}_{timestamp}_coords.npy")
-                    np.save(coord_file, coord_array)
-                    print(f"   ✅ 坐标信息已保存到: {coord_file}")
-                    print(f"       形状: {coord_array.shape}")
+                if isinstance(value, torch.Tensor):
+                    # 直接的tensor输出
+                    feat_array = value.detach().cpu().numpy()
+                    feat_file = os.path.join(results_dir, f"{scene_name}_{timestamp}_{key}.npy")
+                    np.save(feat_file, feat_array)
+                    saved_files[key] = feat_file
+                    print(f"     ✅ {key} 已保存: {feat_file} (形状: {feat_array.shape})")
+                
+                elif hasattr(value, 'feat') and value.feat is not None:
+                    # Point对象的feat
+                    feat_array = value.feat.detach().cpu().numpy()
+                    feat_file = os.path.join(results_dir, f"{scene_name}_{timestamp}_{key}_feat.npy")
+                    np.save(feat_file, feat_array)
+                    saved_files[f'{key}_feat'] = feat_file
+                    print(f"     ✅ {key}.feat 已保存: {feat_file} (形状: {feat_array.shape})")
+                    
+                    # Point对象的coord
+                    if hasattr(value, 'coord') and value.coord is not None:
+                        coord_array = value.coord.detach().cpu().numpy()
+                        coord_file = os.path.join(results_dir, f"{scene_name}_{timestamp}_{key}_coord.npy")
+                        np.save(coord_array, coord_file)
+                        saved_files[f'{key}_coord'] = coord_file
+                        print(f"     ✅ {key}.coord 已保存: {coord_file} (形状: {coord_array.shape})")
+                    
+                    # Point对象的其他属性
+                    for attr_name in ['grid_coord', 'serialized_code', 'index', 'offset']:
+                        if hasattr(value, attr_name):
+                            attr_value = getattr(value, attr_name)
+                            if attr_value is not None and isinstance(attr_value, torch.Tensor):
+                                attr_array = attr_value.detach().cpu().numpy()
+                                attr_file = os.path.join(results_dir, f"{scene_name}_{timestamp}_{key}_{attr_name}.npy")
+                                np.save(attr_file, attr_array)
+                                saved_files[f'{key}_{attr_name}'] = attr_file
+                                print(f"     ✅ {key}.{attr_name} 已保存: {attr_file} (形状: {attr_array.shape})")
+                
+                else:
+                    print(f"     ⚠️ {key}: 未知类型 {type(value)}")
+        
+        elif isinstance(output, torch.Tensor):
+            # 直接tensor输出
+            feat_array = output.detach().cpu().numpy()
+            feat_file = os.path.join(results_dir, f"{scene_name}_{timestamp}_output_tensor.npy")
+            np.save(feat_file, feat_array)
+            saved_files['output_tensor'] = feat_file
+            print(f"   ✅ 输出tensor已保存到: {feat_file} (形状: {feat_array.shape})")
         
         # 2. 保存输入特征用于对比
         input_feat_file = os.path.join(results_dir, f"{scene_name}_{timestamp}_input_features.npy")
@@ -397,12 +465,6 @@ def analyze_output(output, input_coord, input_feat, input_lang_feat):
             else:
                 print(f"   输出维度与语言特征不同，可能是混合表示")
     
-    # 语义分析
-    print(f"\n5. 语义分析:")
-    print(f"   这是一个语言预训练模型的输出")
-    print(f"   模型处理了3D高斯场景表示和对应的语言特征")
-    print(f"   输出的point_feat包含了融合了语言理解的点云特征表示")
-    print(f"   可用于下游任务如场景理解、语义分割、视觉问答等")
     
     # 保存分析结果
     print(f"\n6. 结果保存:")
