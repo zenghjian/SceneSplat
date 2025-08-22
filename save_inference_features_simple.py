@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-SceneSplat推理结果简化保存脚本
-只保存核心必要文件，减少文件数量
+SceneSplat inference results simplified save script
+Save only core necessary files to reduce file count
 """
 import os
 import numpy as np
@@ -11,27 +11,27 @@ from datetime import datetime
 
 def save_inference_output_simple(output, input_dict, scene_name, results_dir="/home/huajianzeng/project/SceneSplat/results"):
     """
-    简化版推理输出保存 - 只保存核心文件
+    Simplified inference output save - save only core files
     
     Args:
-        output: 模型输出
-        input_dict: 输入数据字典
-        scene_name: 场景名称
-        results_dir: 保存目录
+        output: Model output
+        input_dict: Input data dictionary
+        scene_name: Scene name
+        results_dir: Save directory
     
     Returns:
-        dict: 保存的文件路径字典
+        dict: Dictionary of saved file paths
     """
-    print(f"\n💾 简化保存推理输出...")
+    print(f"\nSaving inference output...")
     
-    # 创建保存目录
+    # Create save directory
     os.makedirs(results_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
     saved_files = {}
     
     try:
-        # 1. 保存完整输出结构 (pickle格式，保持原始结构)
+        # 1. Save complete output structure (pickle format, maintain original structure)
         output_file = os.path.join(results_dir, f"{scene_name}_{timestamp}_full_output.pkl")
         output_for_save = {}
         
@@ -40,7 +40,7 @@ def save_inference_output_simple(output, input_dict, scene_name, results_dir="/h
                 if isinstance(v, torch.Tensor):
                     output_for_save[k] = v.detach().cpu()
                 elif hasattr(v, '__dict__'):
-                    # 处理Point对象等自定义类
+                    # Handle custom classes like Point objects
                     obj_dict = {}
                     for attr_name, attr_value in v.__dict__.items():
                         if isinstance(attr_value, torch.Tensor):
@@ -60,238 +60,238 @@ def save_inference_output_simple(output, input_dict, scene_name, results_dir="/h
             pickle.dump(output_for_save, f)
         
         saved_files['full_output'] = output_file
-        print(f"   ✅ 完整输出: {os.path.basename(output_file)}")
+        print(f"   Full output: {os.path.basename(output_file)}")
         
-        # 2. 保存主要输出特征 (最重要)
+        # 2. Save main output features (most important)
         if isinstance(output, dict) and 'point_feat' in output:
             point_feat = output['point_feat']
             
             if hasattr(point_feat, 'feat') and point_feat.feat is not None:
-                # 主要特征 - 这是最重要的输出
+                # Main features - most important output
                 feat_array = point_feat.feat.detach().cpu().numpy()
                 feat_file = os.path.join(results_dir, f"{scene_name}_{timestamp}_features.npy")
                 np.save(feat_file, feat_array)
                 saved_files['features'] = feat_file
-                print(f"   ✅ 主要特征: {os.path.basename(feat_file)} {feat_array.shape}")
+                print(f"   Main features: {os.path.basename(feat_file)} {feat_array.shape}")
             
             if hasattr(point_feat, 'coord') and point_feat.coord is not None:
-                # 输出坐标 - 与特征对应的3D位置
+                # Output coordinates - 3D positions corresponding to features
                 coord_array = point_feat.coord.detach().cpu().numpy()
                 coord_file = os.path.join(results_dir, f"{scene_name}_{timestamp}_coords.npy")
                 np.save(coord_file, coord_array)
                 saved_files['coords'] = coord_file
-                print(f"   ✅ 输出坐标: {os.path.basename(coord_file)} {coord_array.shape}")
+                print(f"   Output coordinates: {os.path.basename(coord_file)} {coord_array.shape}")
         
         elif isinstance(output, torch.Tensor):
-            # 如果输出是单个tensor
+            # If output is a single tensor
             feat_array = output.detach().cpu().numpy()
             feat_file = os.path.join(results_dir, f"{scene_name}_{timestamp}_features.npy")
             np.save(feat_file, feat_array)
             saved_files['features'] = feat_file
-            print(f"   ✅ 输出特征: {os.path.basename(feat_file)} {feat_array.shape}")
+            print(f"   Output features: {os.path.basename(feat_file)} {feat_array.shape}")
         
-        # 2. 保存输入数据用于对比 (可选但推荐)
+        # 3. Save input data for comparison (optional but recommended)
         if input_dict:
-            # 原始语言特征 - 用于对比分析
+            # Original language features - for comparison analysis
             if 'lang_feat' in input_dict:
                 lang_array = input_dict['lang_feat'].detach().cpu().numpy()
                 lang_file = os.path.join(results_dir, f"{scene_name}_{timestamp}_input_lang.npy")
                 np.save(lang_file, lang_array)
                 saved_files['input_lang'] = lang_file
-                print(f"   ✅ 输入语言特征: {os.path.basename(lang_file)} {lang_array.shape}")
+                print(f"   Input language features: {os.path.basename(lang_file)} {lang_array.shape}")
             
-            # 原始几何特征 - 用于理解输入
+            # Original geometric features - for understanding input
             if 'feat' in input_dict:
                 geom_array = input_dict['feat'].detach().cpu().numpy()
                 geom_file = os.path.join(results_dir, f"{scene_name}_{timestamp}_input_geom.npy")
                 np.save(geom_file, geom_array)
                 saved_files['input_geom'] = geom_file
-                print(f"   ✅ 输入几何特征: {os.path.basename(geom_file)} {geom_array.shape}")
+                print(f"   Input geometric features: {os.path.basename(geom_file)} {geom_array.shape}")
         
-        # 3. 生成快速加载脚本
+        # 4. Generate quick load script
         load_script = os.path.join(results_dir, f"load_{scene_name}_{timestamp}.py")
         with open(load_script, 'w') as f:
             f.write(f'''#!/usr/bin/env python3
 """
-快速加载SceneSplat推理结果 - 简化版
-生成时间: {datetime.now()}
-场景: {scene_name}
+Quick load SceneSplat inference results - Simplified version
+Generated: {datetime.now()}
+Scene: {scene_name}
 """
 import numpy as np
 import pickle
 import os
 
 def load_results():
-    """加载核心推理结果"""
+    """Load core inference results"""
     results = {{}}
     
-    print("🔄 加载推理结果...")
+    print("Loading inference results...")
     
-    # 加载完整输出
+    # Load complete output
     full_output_file = "{output_file}"
     if os.path.exists(full_output_file):
         with open(full_output_file, 'rb') as f:
             results['full_output'] = pickle.load(f)
-        print("✅ 完整输出已加载")
+        print("Complete output loaded")
     
 ''')
             
-            # 添加加载代码
+            # Add loading code
             for key, file_path in saved_files.items():
                 if file_path.endswith('.npy'):
                     f.write(f'''    # {key}
     {key}_file = "{file_path}"
     if os.path.exists({key}_file):
         results['{key}'] = np.load({key}_file)
-        print(f"✅ {key}: {{results['{key}'].shape}}")
+        print(f"{key}: {{results['{key}'].shape}}")
     else:
-        print(f"❌ 文件不存在: {{{key}_file}}")
+        print(f"File not found: {{{key}_file}}")
     
 ''')
             
             f.write('''    return results
 
 def analyze_features():
-    """分析主要特征"""
+    """Analyze main features"""
     data = load_results()
     
     if 'features' not in data:
-        print("❌ 没有找到主要特征")
+        print("Main features not found")
         return
     
     features = data['features']
-    print(f"\\n📊 特征分析:")
-    print(f"   形状: {features.shape}")
-    print(f"   类型: {features.dtype}")
-    print(f"   范围: [{features.min():.6f}, {features.max():.6f}]")
-    print(f"   均值: {features.mean():.6f}")
-    print(f"   标准差: {features.std():.6f}")
+    print(f"\\nFeature analysis:")
+    print(f"   Shape: {features.shape}")
+    print(f"   Type: {features.dtype}")
+    print(f"   Range: [{features.min():.6f}, {features.max():.6f}]")
+    print(f"   Mean: {features.mean():.6f}")
+    print(f"   Std: {features.std():.6f}")
     
-    # 与输入语言特征对比
+    # Compare with input language features
     if 'input_lang' in data:
         input_lang = data['input_lang']
-        print(f"\\n🔍 与输入语言特征对比:")
-        print(f"   输入形状: {input_lang.shape}")
-        print(f"   输入范围: [{input_lang.min():.6f}, {input_lang.max():.6f}]")
+        print(f"\\nComparison with input language features:")
+        print(f"   Input shape: {input_lang.shape}")
+        print(f"   Input range: [{input_lang.min():.6f}, {input_lang.max():.6f}]")
         
-        # 计算相似度
+        # Calculate similarity
         if features.shape == input_lang.shape:
-            # 计算余弦相似度
+            # Calculate cosine similarity
             features_norm = features / np.linalg.norm(features, axis=1, keepdims=True)
             input_norm = input_lang / np.linalg.norm(input_lang, axis=1, keepdims=True)
             cosine_sim = np.mean(np.sum(features_norm * input_norm, axis=1))
-            print(f"   余弦相似度: {cosine_sim:.6f}")
+            print(f"   Cosine similarity: {cosine_sim:.6f}")
             
             if cosine_sim > 0.8:
-                print("   🔍 高相似度 - 主要保持了输入语言特征")
+                print("   High similarity - mainly preserves input language features")
             elif cosine_sim > 0.3:
-                print("   🔍 中等相似度 - 语言与几何特征融合")
+                print("   Medium similarity - fusion of language and geometric features")
             else:
-                print("   🔍 低相似度 - 大幅特征变换")
+                print("   Low similarity - significant feature transformation")
     
     return data
 
 if __name__ == "__main__":
-    print("SceneSplat推理结果加载器 - 简化版")
+    print("SceneSplat Inference Results Loader - Simplified Version")
     print("=" * 50)
     
-    # 加载并分析
+    # Load and analyze
     data = analyze_features()
     
-    print(f"\\n✅ 完成! 可用数据: {list(data.keys()) if data else '无'}")
+    print(f"\\nComplete! Available data: {list(data.keys()) if data else 'None'}")
     
-    print("\\n💡 使用提示:")
-    print("   - 主要输出特征在 data['features'] 中")
-    print("   - 对应坐标在 data['coords'] 中 (如果有)")
-    print("   - 输入语言特征在 data['input_lang'] 中")
+    print("\\nUsage tips:")
+    print("   - Main output features in data['features']")
+    print("   - Corresponding coordinates in data['coords'] (if available)")
+    print("   - Input language features in data['input_lang']")
 ''')
         
         saved_files['load_script'] = load_script
-        print(f"   ✅ 快速加载脚本: {os.path.basename(load_script)}")
+        print(f"   Quick load script: {os.path.basename(load_script)}")
         
-        # 4. 生成简要摘要
+        # 5. Generate summary
         summary_file = os.path.join(results_dir, f"{scene_name}_{timestamp}_summary.txt")
         with open(summary_file, 'w') as f:
-            f.write(f"SceneSplat推理结果 - 简化版\n")
+            f.write(f"SceneSplat Inference Results - Simplified Version\n")
             f.write(f"=" * 40 + "\n\n")
-            f.write(f"时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\\n")
-            f.write(f"场景: {scene_name}\\n\\n")
+            f.write(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\\n")
+            f.write(f"Scene: {scene_name}\\n\\n")
             
-            f.write("保存文件:\\n")
+            f.write("Saved files:\\n")
             for key, file_path in saved_files.items():
                 f.write(f"- {key}: {os.path.basename(file_path)}\\n")
             
-            f.write(f"\\n核心文件说明:\\n")
+            f.write(f"\\nCore file descriptions:\\n")
             if 'full_output' in saved_files:
-                f.write(f"- full_output.pkl: 完整推理输出，保持原始结构\\n")
+                f.write(f"- full_output.pkl: Complete inference output, maintains original structure\\n")
             if 'features' in saved_files:
-                f.write(f"- features.npy: 主要输出特征，用于下游任务\\n")
+                f.write(f"- features.npy: Main output features for downstream tasks\\n")
             if 'coords' in saved_files:
-                f.write(f"- coords.npy: 特征对应的3D坐标\\n")
+                f.write(f"- coords.npy: 3D coordinates corresponding to features\\n")
             if 'input_lang' in saved_files:
-                f.write(f"- input_lang.npy: 输入语言特征，用于对比\\n")
+                f.write(f"- input_lang.npy: Input language features for comparison\\n")
             if 'input_geom' in saved_files:
-                f.write(f"- input_geom.npy: 输入几何特征\\n")
+                f.write(f"- input_geom.npy: Input geometric features\\n")
             
-            f.write(f"\\n使用方法:\\n")
+            f.write(f"\\nUsage:\\n")
             f.write(f"python {os.path.basename(load_script)}\\n")
         
         saved_files['summary'] = summary_file
-        print(f"   ✅ 摘要文件: {os.path.basename(summary_file)}")
+        print(f"   Summary file: {os.path.basename(summary_file)}")
         
-        print(f"\\n📁 文件保存在: {results_dir}")
+        print(f"\nFiles saved in: {results_dir}")
         npy_count = len([f for f in saved_files.values() if f.endswith('.npy')])
         pkl_count = len([f for f in saved_files.values() if f.endswith('.pkl')])
-        print(f"🎯 核心文件: {npy_count} 个npy文件 + {pkl_count} 个pkl文件")
-        print(f"📋 主要输出: {os.path.basename(saved_files.get('features', 'N/A'))}")
-        print(f"📦 完整输出: {os.path.basename(saved_files.get('full_output', 'N/A'))}")
+        print(f"Core files: {npy_count} npy files + {pkl_count} pkl files")
+        print(f"Main output: {os.path.basename(saved_files.get('features', 'N/A'))}")
+        print(f"Full output: {os.path.basename(saved_files.get('full_output', 'N/A'))}")
         
         return saved_files
         
     except Exception as e:
-        print(f"   ❌ 保存失败: {e}")
+        print(f"   Save failed: {e}")
         import traceback
         traceback.print_exc()
         return {}
 
 def load_simple_results(results_dir, scene_name=None, timestamp=None):
     """
-    加载简化保存的结果
+    Load simplified saved results
     
     Args:
-        results_dir: 结果目录
-        scene_name: 场景名称（可选）
-        timestamp: 时间戳（可选）
+        results_dir: Results directory
+        scene_name: Scene name (optional)
+        timestamp: Timestamp (optional)
     
     Returns:
-        dict: 核心特征数据
+        dict: Core feature data
     """
     if not os.path.exists(results_dir):
-        print(f"❌ 结果目录不存在: {results_dir}")
+        print(f"Results directory does not exist: {results_dir}")
         return {}
     
     files = os.listdir(results_dir)
     
-    # 查找匹配文件
+    # Find matching files
     if scene_name and timestamp:
         prefix = f"{scene_name}_{timestamp}_"
     elif scene_name:
-        # 找到该场景最新的结果
+        # Find the latest results for this scene
         scene_files = [f for f in files if f.startswith(f"{scene_name}_") and f.endswith('.npy')]
         if not scene_files:
-            print(f"❌ 没有找到场景 {scene_name} 的结果")
+            print(f"No results found for scene {scene_name}")
             return {}
-        # 取最新的时间戳
+        # Get the latest timestamp
         timestamps = list(set([f.split('_')[2] for f in scene_files if len(f.split('_')) >= 3]))
         timestamp = max(timestamps) if timestamps else None
         prefix = f"{scene_name}_{timestamp}_" if timestamp else f"{scene_name}_"
     else:
-        print("❌ 请提供场景名称")
+        print("Please provide scene name")
         return {}
     
     results = {}
     
-    # 加载核心文件
+    # Load core files
     core_files = {
         'features': f"{prefix}features.npy",
         'coords': f"{prefix}coords.npy", 
@@ -304,13 +304,13 @@ def load_simple_results(results_dir, scene_name=None, timestamp=None):
         if os.path.exists(file_path):
             try:
                 results[key] = np.load(file_path)
-                print(f"✅ {key}: {results[key].shape}")
+                print(f"{key}: {results[key].shape}")
             except Exception as e:
-                print(f"❌ 加载失败 {filename}: {e}")
+                print(f"Failed to load {filename}: {e}")
     
     return results
 
 if __name__ == "__main__":
-    print("SceneSplat简化特征保存工具")
-    print("功能: 只保存核心必要文件，减少文件数量")
-    print("使用: save_inference_output_simple(output, input_dict, scene_name)")
+    print("SceneSplat Simplified Feature Save Tool")
+    print("Function: Save only core necessary files to reduce file count")
+    print("Usage: save_inference_output_simple(output, input_dict, scene_name)")
